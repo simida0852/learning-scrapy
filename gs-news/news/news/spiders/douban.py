@@ -1,8 +1,8 @@
 import scrapy
 
 
-class ToubanSpider(scrapy.Spider):
-    name = 'touban'
+class DoubanSpider(scrapy.Spider):
+    name = 'douban'
     start_urls = ['https://book.douban.com/tag/?view=type']
     global base_url
     base_url = 'https://book.douban.com'
@@ -14,15 +14,18 @@ class ToubanSpider(scrapy.Spider):
             tagUrls = item.xpath(
                 '//div/table[@class="tagCol"]//tr//a/@href').extract()
 
-            for tagUrl in tagUrls:
-                yield scrapy.Request(base_url + tagUrl, callback=self.parse_book_list)
+            # print('tagUrls', tagUrls)
+
+            # for tagUrl in tagUrls:
+            yield scrapy.Request(base_url + tagUrls[0], callback=self.parse_book_list)
 
     def parse_book_list(self, response):
         for list_item in response.css('div#content div#subject_list ul.subject-list li.subject-item'):
 
             bookSummary = list_item.css('div.info p::text').extract()
 
-            bookUrl = list_item.css('div.info h2 a::attr(href)').extract()
+            bookUrl = list_item.css(
+                'div.info h2 a::attr(href)').extract()
 
             for name in list_item.css('div.info h2 a::text').extract():
                 if(name):
@@ -48,8 +51,8 @@ class ToubanSpider(scrapy.Spider):
                 'bookUrl': bookUrl,
             }
 
-        next_page = response.css('div.paginator span.next a::attr(href)').get()
+        next_page = response.css(
+            'div.paginator span.next a::attr(href)').get()
         if next_page is not None:
             next_page = response.urljoin(next_page)
-            print('=>'*10, next_page)
-            yield scrapy.Request(base_url + next_page, callback=self.parse_book_list)
+            yield scrapy.Request(next_page, callback=self.parse_book_list)
